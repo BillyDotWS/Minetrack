@@ -48,9 +48,11 @@ async function start () {
 
   const games = await fetchGameMetadata()
 
-  logger.log('info', 'Discovered %d game types', games.length)
+  const playableGames = games.filter(game => game.playable)
 
-  games.forEach((game, serverId) => {
+  logger.log('info', 'Discovered %d game types (%d playable)', games.length, playableGames.length)
+
+  playableGames.forEach((game, serverId) => {
     const server = {
       name: game.displayName,
       ip: 'mineplex-' + game.gameType,
