@@ -282,7 +282,7 @@ export class ServerRegistration {
         <span class="server-rank" id="ranking_${this.serverId}"></span>
       </div>
       <div class="column column-status">
-        <h3 class="server-name"><span class="${this._app.favoritesManager.getIconClass(this.isFavorite)}" id="favorite-toggle_${this.serverId}"></span> ${this.data.name}</h3>
+        <h3 class="server-name"><span class="${this._app.favoritesManager.getIconClass(this.isFavorite)}" id="favorite-toggle_${this.serverId}"></span> ${this.data.name}${this.data.gameType ? `<a class="servers-btn" id="servers-btn_${this.serverId}" data-game-type="${this.data.gameType}" data-game-name="${this.data.name}">Servers</a>` : ''}</h3>
         <span class="server-error" id="error_${this.serverId}"></span>
         <span class="server-label" id="player-count_${this.serverId}">Players: <span class="server-value" id="player-count-value_${this.serverId}"></span></span>
         <span class="server-label" id="peak_${this.serverId}">${this._app.publicConfig.graphDurationLabel} Peak: <span class="server-value" id="peak-value_${this.serverId}">-</span></span>
@@ -315,5 +315,50 @@ export class ServerRegistration {
     document.getElementById(`favorite-toggle_${this.serverId}`).addEventListener('click', () => {
       this._app.favoritesManager.handleFavoriteButtonClick(this)
     }, false)
+
+    const serversBtn = document.getElementById(`servers-btn_${this.serverId}`)
+    if (serversBtn) {
+      serversBtn.addEventListener('click', (e) => {
+        e.preventDefault()
+        const gameType = serversBtn.getAttribute('data-game-type')
+        const gameName = serversBtn.getAttribute('data-game-name')
+        this.showServersModal(gameType, gameName)
+      }, false)
+    }
+  }
+
+  showServersModal (gameType, gameName) {
+    const overlay = document.getElementById('servers-modal-overlay')
+    const title = document.getElementById('servers-modal-title')
+    const body = document.getElementById('servers-modal-body')
+    const closeBtn = document.getElementById('servers-modal-close')
+
+    title.innerText = `${gameName} Servers`
+    body.innerHTML = 'Loading...'
+    overlay.style.display = 'block'
+
+    const closeModal = () => { overlay.style.display = 'none' }
+    closeBtn.onclick = closeModal
+    overlay.onclick = (e) => { if (e.target === overlay) closeModal() }
+
+    fetch(`/api/gameservers/${gameType}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.entries || data.entries.length === 0) {
+          body.innerHTML = '<p style="color: #A3A3A3;">No servers online.</p>'
+          return
+        }
+
+        let html = '<table><tr><th>Server</th><th>Players</th><th>State</th></tr>'
+        for (const server of data.entries) {
+          const stateClass = server.state === 'WAITING' ? 'state-waiting' : server.state === 'STARTED' ? 'state-started' : 'state-unknown'
+          html += `<tr><td>${server.friendlyName}</td><td>${server.players}</td><td class="${stateClass}">${server.state}</td></tr>`
+        }
+        html += '</table>'
+        body.innerHTML = html
+      })
+      .catch(() => {
+        body.innerHTML = '<p style="color: #e74c3c;">Failed to load servers.</p>'
+      })
   }
 }

@@ -14,7 +14,7 @@
 
 	<script defer type="module" src="../js/main.js"></script>
 
-	<title>Minetrack</title>
+	<title>Plextrack</title>
 
 </head>
 
@@ -22,9 +22,17 @@
 
 	<div id="tooltip"></div>
 
+	<div id="servers-modal-overlay">
+		<div id="servers-modal">
+			<span class="servers-close" id="servers-modal-close">&times;</span>
+			<h3 id="servers-modal-title">Servers</h3>
+			<div id="servers-modal-body"></div>
+		</div>
+	</div>
+
 	<div id="status-overlay">
 		<img class="logo-image" src="../images/logo.svg">
-		<h1 class="logo-text">Minetrack</h1>
+		<h1 class="logo-text">Plextrack</h1>
 		<div id="status-text">Connecting...</div>
 	</div>
 
@@ -35,8 +43,8 @@
 		<header>
 			<div class="header-possible-row-break column-left">
 				<img class="logo-image" src="../images/logo.svg">
-				<h1 class="logo-text">Minetrack</h1>
-				<p class="logo-status">Counting <span class="global-stat" id="stat_totalPlayers">0</span> players on <span class="global-stat" id="stat_networks">0</span> Minecraft servers.</p>
+				<h1 class="logo-text">Plextrack</h1>
+				<p class="logo-status">Counting <span class="global-stat" id="stat_totalPlayers">0</span> players on <span class="global-stat" id="stat_networks">0</span> Mineplex Games</p>
 			</div>
 
 			<div class="header-possible-row-break column-right">

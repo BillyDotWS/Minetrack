@@ -4,9 +4,6 @@
   "description": "A Minecraft server tracker that lets you focus on the basics.",
   "dependencies": {
     "finalhandler": "^1.1.2",
-    "mcpe-ping-fixed": "0.0.3",
-    "mcping-js": "^1.4.1",
-    "request": "2.88.2",
     "serve-static": "^1.16.2",
     "sqlite3": "^5.1.5",
     "uplot": "1.0.11",

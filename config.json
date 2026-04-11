@@ -1,18 +1,22 @@
 {
 	"site": {
-		"port": 8080,
+		"port": 3000,
 		"ip": "0.0.0.0"
 	},
 	"rates": {
-		"pingAll": 3000,
-		"connectTimeout": 2500
+		"pingAll": 5000,
+		"connectTimeout": 10000
 	},
 	"oldPingsCleanup": {
 		"enabled": false,
 		"interval": 3600000
 	},
 	"logFailedPings": true,
-	"logToDatabase": false,
+	"logToDatabase": true,
 	"graphDuration": 86400000,
-	"serverGraphDuration": 180000
+	"serverGraphDuration": 180000,
+	"mineplexApi": {
+		"baseUrl": "http://host.docker.internal:8080",
+		"apiKey": ""
+	}
 }
