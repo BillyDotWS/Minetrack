@@ -230,6 +230,8 @@ footer a:hover {
   height: var(--fixed-server-favicon-size);
   border-radius: var(--border-radius);
   margin-top: 5px;
+  /* Game icons are 16x16 Minecraft textures — keep pixels crisp when scaled up */
+  image-rendering: pixelated;
 }
 
 .server .column-favicon .server-rank {

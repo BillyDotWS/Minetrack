@@ -5,6 +5,9 @@ const logger = require('./lib/logger')
 
 const config = require('./config')
 
+// gameType -> in-game material icon (Minecraft texture), mirroring MineplexUI's GameTypeMaterialKey
+const gameIcons = require('./game-icons.json')
+
 const app = new App()
 
 function assignColor (name) {
@@ -70,7 +73,8 @@ async function start () {
       ip: 'mineplex-' + game.gameType,
       type: 'MINEPLEX_API',
       gameType: game.gameType,
-      color: assignColor(game.displayName)
+      color: assignColor(game.displayName),
+      favicon: gameIcons[game.gameType]
     }
 
     app.serverRegistrations.push(new ServerRegistration(app, serverId, server))
@@ -85,7 +89,8 @@ async function start () {
     type: 'MINEPLEX_API',
     gameType: 'mps',
     mpsAggregate: true,
-    color: assignColor('Player Servers')
+    color: assignColor('Player Servers'),
+    favicon: gameIcons.mps
   }
   app.serverRegistrations.push(new ServerRegistration(app, playableGames.length, playerServer))
 
