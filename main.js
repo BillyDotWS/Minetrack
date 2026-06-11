@@ -76,14 +76,15 @@ async function start () {
     app.serverRegistrations.push(new ServerRegistration(app, serverId, server))
   })
 
-  // Combined "Player Servers" tile — aggregates all MPS (player-hosted server) counts.
-  // These share the /mps path and surface as separate player-counts keys, so we sum them.
+  // "Player Servers" tile — only player-HOSTED servers (host attached), sourced from
+  // /v1/game-servers/mps. The per-gameType pools (mps-legacy etc.) also contain host-less
+  // standby servers, which must NOT be shown here.
   const playerServer = {
     name: 'Player Servers',
     ip: 'mineplex-player-servers',
     type: 'MINEPLEX_API',
     gameType: 'mps',
-    aggregateGameTypes: ['mps-legacy', 'mps-modern', 'mps-nano', 'mps'],
+    mpsAggregate: true,
     color: assignColor('Player Servers')
   }
   app.serverRegistrations.push(new ServerRegistration(app, playableGames.length, playerServer))
