@@ -43,12 +43,24 @@ function fetchGameMetadata () {
   })
 }
 
+async function fetchGameMetadataWithRetry () {
+  const retryDelay = 15000
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fetchGameMetadata()
+    } catch (err) {
+      logger.log('warn', 'Game metadata fetch failed (attempt %d): %s - retrying in %ds', attempt, err.message, retryDelay / 1000)
+      await new Promise(resolve => setTimeout(resolve, retryDelay))
+    }
+  }
+}
+
 async function start () {
   logger.log('info', 'Fetching game metadata from %s...', config.mineplexApi.baseUrl)
 
-  const games = await fetchGameMetadata()
+  const games = await fetchGameMetadataWithRetry()
 
-  const playableGames = games.filter(game => game.playable)
+  const playableGames = games.filter(game => game.canQueue)
 
   logger.log('info', 'Discovered %d game types (%d playable)', games.length, playableGames.length)
 
