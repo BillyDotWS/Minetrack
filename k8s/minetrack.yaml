@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minetrack-config
+  namespace: minetrack
+data:
+  config.json: |
+    {
+      "site": { "port": 8080, "ip": "0.0.0.0" },
+      "rates": { "pingAll": 5000, "connectTimeout": 10000 },
+      "oldPingsCleanup": { "enabled": false, "interval": 3600000 },
+      "logFailedPings": true,
+      "logToDatabase": true,
+      "graphDuration": 86400000,
+      "serverGraphDuration": 180000,
+      "mineplexApi": { "baseUrl": "https://api.mineplex.com", "apiKey": "" }
+    }
+---
+# SQLite is single-writer and lives on the node (/opt/minetrack/database.sql), so never run two pods.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minetrack
+  namespace: minetrack
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minetrack
+  template:
+    metadata:
+      labels:
+        app: minetrack
+    spec:
+      imagePullSecrets:
+        - name: ghcr
+      containers:
+        - name: minetrack
+          image: IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: minetrack-env
+          volumeMounts:
+            - name: config
+              mountPath: /usr/src/minetrack/config.json
+              subPath: config.json
+            - name: database
+              mountPath: /usr/src/minetrack/database.sql
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: config
+          configMap:
+            name: minetrack-config
+        - name: database
+          hostPath:
+            path: /opt/minetrack/database.sql
+            type: File
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minetrack
+  namespace: minetrack
+spec:
+  selector:
+    app: minetrack
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: plextrack
+  namespace: minetrack
+spec:
+  secretName: plextrack-tls
+  dnsNames:
+    - plextrack.billy.ws
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minetrack
+  namespace: minetrack
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - plextrack.billy.ws
+      secretName: plextrack-tls
+  rules:
+    - host: plextrack.billy.ws
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minetrack
+                port:
+                  number: 80
