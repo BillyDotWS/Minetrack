@@ -58,12 +58,46 @@ async function fetchGameMetadataWithRetry () {
   }
 }
 
+function iconFor (gameType) {
+  return gameIcons[gameType] || gameIcons[gameType.replace(/lobby$/, '')] || gameIcons._default
+}
+
+function playableKey (games) {
+  return games.filter(game => game.canQueue).map(game => game.gameType).sort().join(',')
+}
+
+// The tile list is built once at startup, so poll the metadata and restart (the pod restarts
+// the container) when the playable games change. A change must be seen twice in a row so a
+// game briefly toggling canQueue does not bounce the process.
+function watchGameList (startupKey) {
+  const interval = config.gameRefreshInterval || 5 * 60 * 1000
+  let pendingKey = null
+
+  setInterval(() => {
+    fetchGameMetadata()
+      .then(games => {
+        const key = playableKey(games)
+        if (!key) return
+        if (key === startupKey) {
+          pendingKey = null
+        } else if (key === pendingKey) {
+          logger.log('info', 'Playable game list changed (%s -> %s), restarting to pick it up', startupKey, key)
+          process.exit(0)
+        } else {
+          pendingKey = key
+        }
+      })
+      .catch(err => logger.log('warn', 'Game metadata refresh failed: %s', err.message))
+  }, interval)
+}
+
 async function start () {
   logger.log('info', 'Fetching game metadata from %s...', config.mineplexApi.baseUrl)
 
   const games = await fetchGameMetadataWithRetry()
 
   const playableGames = games.filter(game => game.canQueue)
+  watchGameList(playableKey(games))
 
   logger.log('info', 'Discovered %d game types (%d playable)', games.length, playableGames.length)
 
@@ -74,7 +108,7 @@ async function start () {
       type: 'MINEPLEX_API',
       gameType: game.gameType,
       color: assignColor(game.displayName),
-      favicon: gameIcons[game.gameType]
+      favicon: iconFor(game.gameType)
     }
 
     app.serverRegistrations.push(new ServerRegistration(app, serverId, server))
