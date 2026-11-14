@@ -43,10 +43,17 @@ jobs:
       - name: Deploy
         env:
           KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           if [ -z "$KUBECONFIG_DATA" ]; then echo "::notice::KUBECONFIG secret not set, skipping deploy"; exit 0; fi
           echo "$KUBECONFIG_DATA" > "$RUNNER_TEMP/kubeconfig"
           export KUBECONFIG="$RUNNER_TEMP/kubeconfig"
+          # Cloudflare Access: start a local proxy so kubectl can reach the tunnel-protected API.
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared
+          cloudflared access tcp --hostname k8s.billy.ws --url 127.0.0.1:6444 --service-token-id "$CF_ACCESS_CLIENT_ID" --service-token-secret "$CF_ACCESS_CLIENT_SECRET" &
+          sleep 3
+          sed -i 's|server: https://k8s.billy.ws|server: https://127.0.0.1:6444|' "$RUNNER_TEMP/kubeconfig"
           # Short-lived pull secret: images are pinned by sha and stay cached on the node after rollout.
           kubectl -n minetrack create secret docker-registry ghcr \
             --docker-server=ghcr.io --docker-username="${{ github.actor }}" \
